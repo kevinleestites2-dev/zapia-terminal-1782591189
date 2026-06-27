@@ -1,6 +1,4 @@
-import os
-import subprocess
-import sys
+import os, subprocess, sys
 
 def run(cmd):
     print(f"Executing: {cmd}")
@@ -12,18 +10,29 @@ def run(cmd):
         print(f"Error: {e.output}")
         return False
 
-# Step 1: Clean and Clone
+# Clean start
 if os.path.exists("mercury-agent"):
     run("rm -rf mercury-agent")
 
 if not run("git clone https://github.com/cosmicstack-labs/mercury-agent"):
     sys.exit(1)
 
-# Step 2: Install
-os.chdir("mercury-agent")
-if not run("pip install -r requirements.txt"):
-    # Try a more forceful install if it fails
-    run("pip install --user -r requirements.txt")
+# The repo structure might have requirements inside mercury-agent/
+# Let's find where requirements.txt actually is
+print("Searching for requirements.txt...")
+req_path = None
+for root, dirs, files in os.walk("mercury-agent"):
+    if "requirements.txt" in files:
+        req_path = os.path.join(root, "requirements.txt")
+        break
 
-# Step 3: Verify
-run("python3 -m mercury_agent --version")
+if req_path:
+    print(f"Found requirements at: {req_path}")
+    run(f"pip install -r {req_path}")
+    # Run the module from the correct directory
+    os.chdir(os.path.dirname(req_path))
+    run("python3 -m mercury_agent --version")
+else:
+    print("Could not find requirements.txt in the repo.")
+    # List files to help debug
+    run("find mercury-agent -maxdepth 2")
