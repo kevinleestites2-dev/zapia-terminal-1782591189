@@ -10,17 +10,19 @@ def run(cmd):
         print(f"Error: {e.output}")
         return False
 
-# Clean start
-if os.path.exists("mercury-agent"):
-    run("rm -rf mercury-agent")
+# Ensure we are in the right spot
+base_dir = os.getcwd()
+agent_dir = os.path.join(base_dir, "mercury-agent")
 
-if not run("git clone https://github.com/cosmicstack-labs/mercury-agent"):
-    sys.exit(1)
-
-# It's a Node project (has package.json)
-os.chdir("mercury-agent")
-if run("npm install"):
-    run("npm run build")
-    print("SUCCESS: Mercury Agent is built and ready.")
+if os.path.exists(agent_dir):
+    os.chdir(agent_dir)
+    # Check if dist/index.js exists
+    if os.path.exists("dist/index.js"):
+        print("SUCCESS: found dist/index.js")
+        # Run the help command to see available commands
+        run("node dist/index.js --help")
+    else:
+        print("dist/index.js not found. Listing dist contents:")
+        run("ls -R dist")
 else:
-    print("FAILED: Could not install dependencies.")
+    print("mercury-agent directory not found.")
